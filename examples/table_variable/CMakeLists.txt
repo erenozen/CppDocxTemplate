@@ -1,2 +1,0 @@
-add_executable(example_table_variable main.cpp)
-target_link_libraries(example_table_variable PRIVATE QtDocxTemplate::core)
