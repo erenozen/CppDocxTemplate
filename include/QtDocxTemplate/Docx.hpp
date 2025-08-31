@@ -43,6 +43,10 @@ public:
     QStringList findVariables() const;
     /** Perform in-place substitution for provided variables (text, image, bullet list, table). Unknown placeholders remain. */
     void fillTemplate(const Variables &variables);
+    /** Validate that each TableVariable column placeholder appears somewhere in the template (main doc + headers/footers).
+     *  Returns list of missing placeholder tokens (wrapped form). Emits qWarning for each missing token.
+     */
+    QStringList validateTableColumnPlaceholders(const Variables &variables) const;
     /** Write resulting package to disk (zip). */
     void save(const QString &outputPath) const;
 

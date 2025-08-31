@@ -124,4 +124,43 @@ void Docx::save(const QString &outputPath) const {
     }
 }
 
+QStringList Docx::validateTableColumnPlaceholders(const Variables &variables) const {
+    QStringList missing;
+    if(!ensureOpened()) return missing;
+    // Collect all wrapped placeholders for table columns
+    QSet<QString> required; QSet<QString> present;
+    for(const auto &v : variables.all()) {
+        if(v->type() == VariableType::Table) {
+            auto *tv = static_cast<const TableVariable*>(v.get());
+            for(const auto &k : tv->placeholderKeys()) {
+                QString token = k;
+                if(!token.startsWith(m_pattern.prefix) || !token.endsWith(m_pattern.suffix)) {
+                    token = m_pattern.prefix + token + m_pattern.suffix;
+                }
+                required.insert(token);
+            }
+        }
+    }
+    if(required.isEmpty()) return missing;
+    // Gather text from all relevant parts
+    QStringList partNames; partNames << "word/document.xml";
+    for(const auto &name : m_package->partNames()) {
+        if(name.startsWith("word/header") && name.endsWith(".xml")) partNames << name;
+        else if(name.startsWith("word/footer") && name.endsWith(".xml")) partNames << name;
+    }
+    partNames.removeDuplicates();
+    for(const auto &pn : partNames) {
+        auto dataOpt = m_package->readPart(pn); if(!dataOpt) continue;
+        xml::XmlPart part; if(!part.load(*dataOpt)) continue;
+        auto paragraphs = part.selectAll("//w:p");
+        for(const auto &p : paragraphs) {
+            QString paraText; pugi::xpath_query textQuery(".//w:t"); auto ts = textQuery.evaluate_node_set(p);
+            for(const auto &tn : ts) { pugi::xml_node node = tn.node(); paraText += QString::fromUtf8(node.text().get()); }
+            for(const auto &req : required) if(paraText.contains(req)) present.insert(req);
+        }
+    }
+    for(const auto &req : required) if(!present.contains(req)) { missing << req; qWarning("Template missing table column placeholder: %s", req.toUtf8().constData()); }
+    return missing;
+}
+
 } // namespace QtDocxTemplate
