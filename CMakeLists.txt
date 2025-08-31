@@ -70,6 +70,7 @@ add_library(QtDocxTemplate
     src/ImageVariable.cpp
     src/BulletListVariable.cpp
     src/TableVariable.cpp
+    src/Builder.cpp
     src/opc/Package.cpp
     src/xml/XmlPart.cpp
     src/engine/RunModel.cpp

@@ -56,3 +56,8 @@ add_executable(multipart_replace_test multipart_replace_test.cpp)
 target_include_directories(multipart_replace_test PRIVATE ${CMAKE_SOURCE_DIR}/src ${CMAKE_BINARY_DIR}/_deps/pugixml-src/src)
 target_link_libraries(multipart_replace_test QtDocxTemplate::core)
 add_test(NAME qtdocxtemplate_multipart_replace COMMAND multipart_replace_test)
+
+add_executable(qtdocxtemplate_builder_api_test builder_api_test.cpp)
+target_include_directories(qtdocxtemplate_builder_api_test PRIVATE ${CMAKE_SOURCE_DIR}/src ${CMAKE_BINARY_DIR}/_deps/pugixml-src/src)
+target_link_libraries(qtdocxtemplate_builder_api_test QtDocxTemplate::core Qt6::Core Qt6::Gui)
+add_test(NAME qtdocxtemplate_builder_api COMMAND qtdocxtemplate_builder_api_test)
