@@ -38,13 +38,17 @@ doc.save("output.docx");
 - TextVariable (style preserved, run fragmentation neutral)
 - ImageVariable (pixels → EMU @ 96 DPI)
 - BulletListVariable (list of text items)
-- TableVariable (column-wise lists; row replication)
+- TableVariable (column-wise lists; row replication across document, headers & footers)
 
 Utility helpers: `Docx::readTextContent()`, `Docx::findVariables()`.
 
-### templ4docx Parity Aliases
+### templ4docx Parity Aliases & Helpers
 For easier migration from Java templ4docx naming, the following aliases are provided (identical behavior):
 `Variables::addTextVariable`, `addImageVariable`, `addBulletListVariable`, `addTableVariable` and `TableVariable::addVariable` (adds a column). Existing concise methods remain.
+
+Additional helpers for parity ergonomics:
+- `makeTableVarFromRows(keys, rows)` build column-wise table variable from row maps
+- `validateTableColumnPlaceholders(vars)` warns/returns any table column placeholders absent from the template (document + headers/footers)
 
 Parity table example (Java-like style):
 ```cpp
@@ -55,7 +59,16 @@ table->addVariable({ std::make_shared<TextVariable>("${company}", "Alpha"), std:
 vars.addTableVariable(table);
 doc.fillTemplate(vars);
 ```
-See example target `parity_workflow`.
+Row-based helper example:
+```cpp
+std::vector<QMap<QString,QString>> rows;
+QMap<QString,QString> r1; r1["plate"]="06ABC123"; r1["company"]="Alpha"; rows.push_back(r1);
+QMap<QString,QString> r2; r2["plate"]="06XYZ789"; r2["company"]="Beta"; rows.push_back(r2);
+auto table = makeTableVarFromRows(doc, {"plate","company"}, rows);
+vars.addTableVariable(table);
+QStringList missing = doc.validateTableColumnPlaceholders(vars); // optional validation
+```
+See example target `parity_workflow` and test `parity_aliases_test`.
 
 ## Extended Examples
 
@@ -138,7 +151,7 @@ Feature flags exported in `QtDocxTemplateConfig.cmake`:
 - Table replication uses the first row under the table variable cell as a template.
 
 ## Roadmap / Non-Goals
-Feature-complete template processing for common use cases. Out of scope (for now): headers/footers, numbering overrides, hyperlinks, advanced drawing objects, nested tables beyond simple row replication.
+Feature-complete for primary templ4docx parity (text, images, bullet lists with auto-numbering, tables, headers/footers, validator). Out of scope (for now): hyperlinks, advanced drawing objects, nested/complex table scenarios beyond simple row replication, tracked changes.
 
 ## License & Notices
 Apache-2.0. See LICENSE and THIRD_PARTY_NOTICES.md. This project is an independent implementation.
