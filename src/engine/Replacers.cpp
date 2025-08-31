@@ -12,11 +12,40 @@
 #include <QBuffer>
 #include <QFileInfo>
 #include <sstream>
+#include <QDebug>
 
 using QtDocxTemplate::opc::Package;
 using namespace QtDocxTemplate::util;
 
-namespace QtDocxTemplate { namespace engine {
+namespace QtDocxTemplate { 
+
+// Implementation for TableVariable new methods (kept in this TU for compactness)
+size_t TableVariable::validatedRowCount(bool &lengthsMismatch) const {
+	lengthsMismatch = false;
+	if(m_columns.empty()) return 0;
+	size_t expected = m_columns.front().size();
+	for(const auto &c : m_columns) {
+		if(c.size() != expected) { lengthsMismatch = true; expected = std::min(expected, c.size()); }
+	}
+	return expected;
+}
+
+void TableVariable::addColumn(const std::vector<VariablePtr> &column) {
+	if(column.empty()) return; // ignore empty column silently
+	QString key = column.front()->key();
+	bool consistent = true;
+	for(const auto &v : column) {
+		if(v->key() != key) { consistent = false; break; }
+	}
+	if(!consistent) {
+		qWarning() << "TableVariable: column skipped due to mixed placeholder keys";
+		return;
+	}
+	m_columns.push_back(column);
+	m_columnKeys.push_back(key);
+}
+
+namespace engine {
 
 namespace { QString wrapKey(const QString &k,const QString &pre,const QString &suf){ return pre + k + suf; } }
 
@@ -197,62 +226,109 @@ void Replacers::replaceBulletLists(pugi::xml_document &doc, const QString &prefi
 
 void Replacers::replaceTables(pugi::xml_document &doc, Package &pkg, const QString &prefix, const QString &suffix, const ::QtDocxTemplate::Variables &vars) {
 	Q_UNUSED(pkg);
-	// Build table variable map
-	std::unordered_map<QString, const TableVariable*> tmap;
-	for(const auto &v : vars.all()) if(v->type()==VariableType::Table) tmap[v->key()] = static_cast<const TableVariable*>(v.get());
-	if(tmap.empty()) return;
-	// For each table
-	pugi::xpath_query tq("//w:tbl"); auto tbls = tq.evaluate_node_set(doc);
-	for(auto &tn : tbls) {
-		pugi::xml_node tbl = tn.node();
-		// Find template row containing any table variable token
-		for(pugi::xml_node tr = tbl.child("w:tr"); tr; tr = tr.next_sibling("w:tr")) {
-			bool hasToken=false; QString foundToken; pugi::xml_node tokenCell; pugi::xml_node tokenPara;
-			for(pugi::xml_node tc = tr.child("w:tc"); tc && !hasToken; tc = tc.next_sibling("w:tc")) {
+	// Collect all TableVariables
+	std::vector<const TableVariable*> tables;
+	tables.reserve(vars.all().size());
+	for(const auto &v : vars.all()) if(v->type()==VariableType::Table) tables.push_back(static_cast<const TableVariable*>(v.get()));
+	if(tables.empty()) return;
+
+	// Build placeholder -> (tableIdx, columnIdx) map
+	struct ColRef { size_t tableIdx; size_t colIdx; };
+	std::unordered_map<QString, ColRef> placeholderMap;
+	for(size_t ti=0; ti<tables.size(); ++ti) {
+		const auto *tv = tables[ti];
+		for(size_t ci=0; ci<tv->placeholderKeys().size(); ++ci) {
+			placeholderMap[tv->placeholderKeys()[ci]] = {ti, ci};
+		}
+	}
+	if(placeholderMap.empty()) return;
+
+	// Iterate tables in document
+	pugi::xpath_query tq("//w:tbl"); auto tblNodes = tq.evaluate_node_set(doc);
+	for(auto &tn : tblNodes) {
+		pugi::xml_node tblNode = tn.node();
+		bool expanded = false;
+		// Examine each row to find a template row (containing one or more known placeholders)
+		for(pugi::xml_node tr = tblNode.child("w:tr"); tr; tr = tr.next_sibling("w:tr")) {
+			// Scan row cells for placeholders
+			struct CellToken { pugi::xml_node cell; pugi::xml_node para; QString placeholder; };
+			std::vector<CellToken> cellTokens;
+			for(pugi::xml_node tc = tr.child("w:tc"); tc; tc = tc.next_sibling("w:tc")) {
 				for(pugi::xml_node p = tc.child("w:p"); p; p = p.next_sibling("w:p")) {
 					RunModel rm; rm.build(p); QString txt = rm.text(); if(txt.isEmpty()) continue;
 					QRegularExpression re(QRegularExpression::escape(prefix)+"(.*?)"+QRegularExpression::escape(suffix));
-					auto it = re.globalMatch(txt); while(it.hasNext()){ auto m=it.next(); QString token=m.captured(0); if(tmap.count(token)) { hasToken=true; foundToken=token; tokenCell=tc; tokenPara=p; break; } }
-				}
-			}
-			if(!hasToken) continue;
-			auto tableVar = tmap[foundToken];
-			// Determine row count
-			size_t rowCount = tableVar->columns().empty() ? 0 : tableVar->columns().front().size();
-			for(const auto &col : tableVar->columns()) rowCount = std::min(rowCount, col.size());
-			if(rowCount==0) { tbl.remove_child(tr); break; }
-			// Create rows
-			pugi::xml_node insertionPoint = tr; // insert after
-			for(size_t i=0;i<rowCount;i++) {
-				pugi::xml_node newTr = tbl.insert_copy_after(tr, insertionPoint);
-				insertionPoint = newTr;
-				// For each cell
-				size_t colIdx=0; for(pugi::xml_node tc = newTr.child("w:tc"); tc; tc = tc.next_sibling("w:tc"), ++colIdx) {
-					if(colIdx >= tableVar->columns().size()) continue;
-					const auto &col = tableVar->columns()[colIdx]; if(i >= col.size()) continue; auto cellVar = col[i];
-					// Process first paragraph containing token
-					for(pugi::xml_node p = tc.child("w:p"); p; p = p.next_sibling("w:p")) {
-						RunModel rm; rm.build(p); QString txt = rm.text(); if(!txt.contains(foundToken)) continue;
-						int pos = txt.indexOf(foundToken); int endPos = pos + foundToken.size();
-						if(cellVar->type()==VariableType::Text) {
-							auto *tv = static_cast<TextVariable*>(cellVar.get());
-							rm.replaceRange(pos, endPos, [&](pugi::xml_node w_p, pugi::xml_node styleR){ auto r = RunModel::makeTextRun(w_p, styleR, tv->value(), true); return std::vector<pugi::xml_node>{ r }; });
-							rm.build(p);
-						} else if(cellVar->type()==VariableType::Image) {
-							auto *iv = static_cast<ImageVariable*>(cellVar.get());
-							// Simplified: no per-cell images yet (would require rels/media): skip for brevity
-							QByteArray png; QBuffer buf(&png); buf.open(QIODevice::WriteOnly); iv->image().save(&buf, "PNG");
-							// Add media and rel similar to paragraph images (reuse code?) - omitted for parity placeholder
-						} else if(cellVar->type()==VariableType::BulletList) {
-							// Simplified: ignore bullet list inside table for now
+					auto it = re.globalMatch(txt);
+					while(it.hasNext()) {
+						auto m = it.next(); QString token = m.captured(0);
+						if(placeholderMap.count(token)) {
+							cellTokens.push_back({tc, p, token});
+							break; // one token per cell is typical
 						}
-						break; // only first paragraph
 					}
 				}
 			}
-			// Remove template row
-			tbl.remove_child(tr);
-			break; // one template row per table
+			if(cellTokens.empty()) continue; // not a template row
+
+			// Determine which TableVariable(s) are represented by collected placeholders (choose first fully matched table)
+			const TableVariable *matched = nullptr; size_t matchedIdx = 0;
+			for(size_t ti=0; ti<tables.size() && !matched; ++ti) {
+				const auto *tv = tables[ti];
+				// Count how many of its column keys appear in this row
+				size_t hits = 0; for(const auto &k : tv->placeholderKeys()) {
+					for(const auto &ct : cellTokens) if(ct.placeholder == k) { ++hits; break; }
+				}
+				if(hits == tv->placeholderKeys().size() && hits>0) { matched = tv; matchedIdx = ti; }
+			}
+			if(!matched) continue; // row doesn't fully represent a declared table variable
+
+			bool lenMismatch=false; size_t rowCount = matched->validatedRowCount(lenMismatch);
+			if(rowCount==0) { tblNode.remove_child(tr); expanded=true; break; }
+			if(lenMismatch) qWarning("TableVariable: column length mismatch; truncating to minimum length %zu", rowCount);
+
+			// Map placeholder -> columnIdx for the matched table
+			std::unordered_map<QString, size_t> colIndexByToken;
+			for(size_t ci=0; ci<matched->placeholderKeys().size(); ++ci) {
+				colIndexByToken[matched->placeholderKeys()[ci]] = ci;
+			}
+
+			// Clone template row 'rowCount' times inserting AFTER original
+			pugi::xml_node insertionPoint = tr;
+			for(size_t r=0; r<rowCount; ++r) {
+				pugi::xml_node newRow = tblNode.insert_copy_after(tr, insertionPoint);
+				insertionPoint = newRow;
+				// For each cell with a placeholder
+				size_t cellIdx = 0;
+				for(pugi::xml_node tc = newRow.child("w:tc"); tc; tc = tc.next_sibling("w:tc"), ++cellIdx) {
+					// Find placeholder token in first paragraph
+					for(pugi::xml_node p = tc.child("w:p"); p; p = p.next_sibling("w:p")) {
+						RunModel rm; rm.build(p); QString txt = rm.text(); if(txt.isEmpty()) continue;
+						for(const auto &kv : colIndexByToken) {
+							const QString &token = kv.first; size_t colIdx = kv.second;
+							int pos = txt.indexOf(token); if(pos<0) continue;
+							int endPos = pos + token.size();
+							// Retrieve variable for this row/column
+							const auto &col = matched->columns()[colIdx]; if(r >= col.size()) break;
+							auto cellVar = col[r];
+							if(cellVar->type()==VariableType::Text) {
+								auto *tv = static_cast<TextVariable*>(cellVar.get());
+								rm.replaceRange(pos, endPos, [&](pugi::xml_node w_p, pugi::xml_node styleR){ auto run = RunModel::makeTextRun(w_p, styleR, tv->value(), true); return std::vector<pugi::xml_node>{ run }; });
+								rm.build(p);
+							} else if(cellVar->type()==VariableType::Image) {
+								// TODO: Implement image insertion inside table cells (future step)
+							}
+							break; // one placeholder per cell
+						}
+					}
+				}
+			}
+			// Remove original template row
+			tblNode.remove_child(tr);
+			expanded = true;
+			break; // only one template row consumed per declared TableVariable per table
+		}
+		if(!expanded) {
+			// Provide diagnostics if table variable placeholders were expected but not found
+			// (Optional – suppressed for brevity)
 		}
 	}
 }
