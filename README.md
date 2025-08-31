@@ -1,6 +1,6 @@
 ## QtDocxTemplate – Utility library for filling templates in DOCX files (Qt 6 / C++)
 
-Lightweight C++/Qt library for reading DOCX text, finding placeholders, and filling templates with text, images, bullet lists and tables (including headers & footers). Inspired by templ4docx.
+Lightweight C++/Qt library for reading DOCX text, finding placeholders, and filling templates with text, images, bullet lists and tables (including headers & footers). Inspired by templ4docx. Repository trimmed to only essential library sources (see layout below).
 
 Core features:
 - Read full document text (`Docx::readTextContent()`)
@@ -76,3 +76,14 @@ QStringList varsFound = doc.findVariables();
 
 ### Dependencies
 Qt6 (Core, Gui), pugixml, libzip or minizip-ng (auto fallback). All bundled or resolved automatically when not present system-wide.
+
+### Repository Layout (minimal distribution)
+```
+include/QtDocxTemplate/   Public headers
+src/                      Implementation
+cmake/                    CMake package config helpers
+CMakeLists.txt            Build script
+LICENSE                   Apache-2.0 license
+README.md                 This file
+```
+Generated / local-only (ignored): `build/`, `install/`, `tmp_*`, editor configs.
