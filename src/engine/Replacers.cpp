@@ -167,7 +167,7 @@ void Replacers::replaceImages(pugi::xml_document &doc, Package &pkg,
 		QRegularExpression re(QRegularExpression::escape(prefix)+"(.*?)"+QRegularExpression::escape(suffix));
 		auto it = re.globalMatch(paraText);
 		struct M { int s; int e; QString tok; };
-		std::vector<M> matches; while(it.hasNext()){ auto m=it.next(); QString token=m.captured(0); if(!imap.count(token)) continue; matches.push_back({m.capturedStart(0), m.capturedEnd(0), token}); }
+		std::vector<M> matches; while(it.hasNext()){ auto m=it.next(); QString token=m.captured(0); if(!imap.count(token)) continue; matches.push_back({(int)m.capturedStart(0), (int)m.capturedEnd(0), token}); }
 		if(matches.empty()) continue; std::sort(matches.begin(), matches.end(), [](auto &a, auto &b){ return a.s > b.s; });
 		for(auto &mm : matches) {
 			auto info = imap[mm.tok];

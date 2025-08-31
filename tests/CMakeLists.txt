@@ -32,6 +32,11 @@ target_include_directories(bullet_replace_test PRIVATE ${CMAKE_SOURCE_DIR}/src $
 target_link_libraries(bullet_replace_test QtDocxTemplate::core)
 add_test(NAME qtdocxtemplate_bullet_replace COMMAND bullet_replace_test)
 
+add_executable(bullet_numbering_test bullet_numbering_test.cpp)
+target_include_directories(bullet_numbering_test PRIVATE ${CMAKE_SOURCE_DIR}/src ${CMAKE_BINARY_DIR}/_deps/pugixml-src/src)
+target_link_libraries(bullet_numbering_test QtDocxTemplate::core)
+add_test(NAME qtdocxtemplate_bullet_numbering COMMAND bullet_numbering_test)
+
 add_executable(table_replace_test table_replace_test.cpp)
 target_include_directories(table_replace_test PRIVATE ${CMAKE_SOURCE_DIR}/src ${CMAKE_BINARY_DIR}/_deps/pugixml-src/src)
 target_link_libraries(table_replace_test QtDocxTemplate::core)
