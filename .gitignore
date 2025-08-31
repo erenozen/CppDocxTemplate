@@ -20,6 +20,21 @@ Testing/
 compile_commands.json
 generated/
 
+# Development / non-distribution content
+tests/
+examples/
+docs/
+.github/
+scripts/run_templ4docx.sh
+scripts/QtDocxTemplatePerfTest*
+scripts/QtDocxTemplateReportExport*
+
+# Local scratch / temp
+tmp_*/
+*.swp
+*.tmp
+*.log
+
 # Local Java performance comparison harness (not part of C++ library)
 tests/performance-tests/
 

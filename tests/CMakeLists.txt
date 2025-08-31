@@ -81,3 +81,12 @@ add_executable(table_column_validator_test table_column_validator_test.cpp)
 target_include_directories(table_column_validator_test PRIVATE ${CMAKE_SOURCE_DIR}/src ${CMAKE_BINARY_DIR}/_deps/pugixml-src/src)
 target_link_libraries(table_column_validator_test QtDocxTemplate::core Qt6::Core Qt6::Gui)
 add_test(NAME qtdocxtemplate_table_column_validator COMMAND table_column_validator_test)
+
+add_executable(QtDocxTemplatePerfTest performance-tests/QtDocxTemplatePerfTest.cpp)
+target_include_directories(QtDocxTemplatePerfTest PRIVATE ${CMAKE_SOURCE_DIR}/src ${CMAKE_BINARY_DIR}/_deps/pugixml-src/src)
+target_link_libraries(QtDocxTemplatePerfTest QtDocxTemplate::core Qt6::Core Qt6::Gui)
+# Not registered as a ctest; run manually for perf comparison.
+
+add_executable(QtDocxTemplateReportExport performance-tests/QtDocxTemplateReportExport.cpp)
+target_include_directories(QtDocxTemplateReportExport PRIVATE ${CMAKE_SOURCE_DIR}/src ${CMAKE_BINARY_DIR}/_deps/pugixml-src/src)
+target_link_libraries(QtDocxTemplateReportExport QtDocxTemplate::core Qt6::Core Qt6::Gui)

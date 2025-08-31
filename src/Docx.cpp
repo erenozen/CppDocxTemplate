@@ -105,7 +105,11 @@ void Docx::fillTemplate(const Variables &variables) {
         if(!dataOpt) continue;
         xml::XmlPart part;
     if(!part.load(*dataOpt)) { setError(ErrorCode::XmlParseFailed); continue; }
-    if(part.selectAll("//w:body").empty()) { setError(ErrorCode::XmlParseFailed); continue; }
+        // Only enforce presence of w:body for the main document part; headers/footers have w:hdr / w:ftr roots.
+        if(partName == "word/document.xml" && part.selectAll("//w:body").empty()) {
+            setError(ErrorCode::XmlParseFailed);
+            continue;
+        }
         engine::Replacers::replaceText(part.doc(), m_pattern.prefix, m_pattern.suffix, variables);
         engine::Replacers::replaceImages(part.doc(), *m_package, m_pattern.prefix, m_pattern.suffix, variables);
         engine::Replacers::replaceBulletLists(part.doc(), *m_package, m_pattern.prefix, m_pattern.suffix, variables);
