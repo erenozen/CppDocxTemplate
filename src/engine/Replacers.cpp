@@ -225,7 +225,6 @@ void Replacers::replaceBulletLists(pugi::xml_document &doc, const QString &prefi
 }
 
 void Replacers::replaceTables(pugi::xml_document &doc, Package &pkg, const QString &prefix, const QString &suffix, const ::QtDocxTemplate::Variables &vars) {
-	Q_UNUSED(pkg);
 	// Collect all TableVariables
 	std::vector<const TableVariable*> tables;
 	tables.reserve(vars.all().size());
@@ -314,7 +313,23 @@ void Replacers::replaceTables(pugi::xml_document &doc, Package &pkg, const QStri
 								rm.replaceRange(pos, endPos, [&](pugi::xml_node w_p, pugi::xml_node styleR){ auto run = RunModel::makeTextRun(w_p, styleR, tv->value(), true); return std::vector<pugi::xml_node>{ run }; });
 								rm.build(p);
 							} else if(cellVar->type()==VariableType::Image) {
-								// TODO: Implement image insertion inside table cells (future step)
+								auto *iv = static_cast<ImageVariable*>(cellVar.get());
+								// Encode image to PNG and add media part
+								QByteArray png; QBuffer buf(&png); buf.open(QIODevice::WriteOnly); iv->image().save(&buf, "PNG");
+								QString mediaPath = pkg.addMedia(png, "png");
+								// Update relationships
+								auto rels = loadOrCreateDocRels(pkg);
+								QString rId = nextImageRelId(rels);
+								auto relRoot = rels.child("Relationships");
+								auto rel = relRoot.append_child("Relationship");
+								rel.append_attribute("Id") = rId.toUtf8().constData();
+								rel.append_attribute("Type") = "http://schemas.openxmlformats.org/officeDocument/2006/relationships/image";
+								rel.append_attribute("Target") = QString("media/%1").arg(QFileInfo(mediaPath).fileName()).toUtf8().constData();
+								std::stringstream ss; rels.save(ss, "  "); QByteArray relBytes(ss.str().c_str(), ss.str().size());
+								pkg.writePart("word/_rels/document.xml.rels", relBytes);
+								// Structural replacement with drawing run (similar to paragraph images)
+								rm.replaceRangeStructural(pos, endPos, [&](pugi::xml_node w_p, pugi::xml_node styleR){ auto run = buildDrawingRun(w_p, styleR, rId, iv->widthPx(), iv->heightPx()); return std::vector<pugi::xml_node>{ run }; });
+								rm.build(p);
 							}
 							break; // one placeholder per cell
 						}
