@@ -88,19 +88,26 @@ QStringList Docx::findVariables() const {
 
 void Docx::fillTemplate(const Variables &variables) {
     if(!ensureOpened()) return;
-    // Load document.xml
-    auto dataOpt = m_package->readPart("word/document.xml");
-    if(!dataOpt) return; // nothing to do
-    xml::XmlPart part;
-    if(!part.load(*dataOpt)) return;
-    // Perform replacements (text first, then images, bullet lists, tables)
-    engine::Replacers::replaceText(part.doc(), m_pattern.prefix, m_pattern.suffix, variables);
-    engine::Replacers::replaceImages(part.doc(), *m_package, m_pattern.prefix, m_pattern.suffix, variables);
-    engine::Replacers::replaceBulletLists(part.doc(), *m_package, m_pattern.prefix, m_pattern.suffix, variables);
-    engine::Replacers::replaceTables(part.doc(), *m_package, m_pattern.prefix, m_pattern.suffix, variables);
-    // Save back
-    QByteArray out = part.save();
-    m_package->writePart("word/document.xml", out);
+    // Build list of document parts to process: main doc + headers + footers
+    QStringList targets;
+    targets << "word/document.xml";
+    for(const auto &name : m_package->partNames()) {
+        if(name.startsWith("word/header") && name.endsWith(".xml")) targets << name;
+        else if(name.startsWith("word/footer") && name.endsWith(".xml")) targets << name;
+    }
+    targets.removeDuplicates();
+    for(const auto &partName : targets) {
+        auto dataOpt = m_package->readPart(partName);
+        if(!dataOpt) continue;
+        xml::XmlPart part;
+        if(!part.load(*dataOpt)) continue;
+        engine::Replacers::replaceText(part.doc(), m_pattern.prefix, m_pattern.suffix, variables);
+        engine::Replacers::replaceImages(part.doc(), *m_package, m_pattern.prefix, m_pattern.suffix, variables);
+        engine::Replacers::replaceBulletLists(part.doc(), *m_package, m_pattern.prefix, m_pattern.suffix, variables);
+        engine::Replacers::replaceTables(part.doc(), *m_package, m_pattern.prefix, m_pattern.suffix, variables);
+        QByteArray out = part.save();
+        m_package->writePart(partName, out);
+    }
 }
 
 void Docx::save(const QString &outputPath) const {
