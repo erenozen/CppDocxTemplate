@@ -8,7 +8,6 @@ set(CMAKE_POSITION_INDEPENDENT_CODE ON)
 include(GNUInstallDirs)
 
 find_package(Qt6 REQUIRED COMPONENTS Core Gui)
-option(QDT_BUILD_DOCS "Build Doxygen docs" OFF)
 option(QDT_FORCE_SYSTEM_LIBZIP "Require system libzip; fail if missing" OFF)
 option(QDT_FORCE_FETCH_MINIZIP "Force FetchContent minizip-ng fallback" OFF)
 
@@ -149,17 +148,7 @@ install(EXPORT QtDocxTemplateTargets
     DESTINATION ${CMAKE_INSTALL_LIBDIR}/cmake/QtDocxTemplate
 )
 
-option(QTDOCTXTEMPLATE_BUILD_EXAMPLES "Build examples" ON)
-option(QTDOCTXTEMPLATE_BUILD_TESTS "Build tests" ON)
-
-if(QTDOCTXTEMPLATE_BUILD_EXAMPLES)
-    add_subdirectory(examples)
-endif()
-
-if(QTDOCTXTEMPLATE_BUILD_TESTS)
-    enable_testing()
-    add_subdirectory(tests)
-endif()
+## (Examples / tests removed in minimal distribution CMake)
 
 message(STATUS "Configured QtDocxTemplate ${PROJECT_VERSION}")
 
@@ -170,16 +159,4 @@ if(NOT TARGET uninstall)
     add_custom_target(uninstall COMMAND ${CMAKE_COMMAND} -P ${CMAKE_CURRENT_BINARY_DIR}/cmake_uninstall.cmake)
 endif()
 
-# Docs (warnings-as-errors configuration)
-if(QDT_BUILD_DOCS)
-    find_package(Doxygen QUIET)
-    if(DOXYGEN_FOUND)
-        configure_file(${CMAKE_SOURCE_DIR}/docs/Doxyfile.in ${CMAKE_BINARY_DIR}/Doxyfile @ONLY)
-        add_custom_target(docs
-            COMMAND ${DOXYGEN_EXECUTABLE} ${CMAKE_BINARY_DIR}/Doxyfile
-            WORKING_DIRECTORY ${CMAKE_BINARY_DIR}
-            COMMENT "Generating API docs with Doxygen (warnings-as-errors)")
-    else()
-        message(FATAL_ERROR "QDT_BUILD_DOCS=ON but Doxygen not found")
-    endif()
-endif()
+## (Documentation generation removed in minimal distribution CMake)

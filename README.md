@@ -70,13 +70,9 @@ Docx doc("template.docx");
 QStringList varsFound = doc.findVariables();
 ```
 
-### Build Options (OFF by default unless noted)
-- `QTDOCTXTEMPLATE_BUILD_TESTS` (ON) – internal tests
-- `QTDOCTXTEMPLATE_BUILD_EXAMPLES` (ON) – sample code
-- `QDT_BUILD_DOCS` – Doxygen
-- `QDT_FORCE_SYSTEM_LIBZIP` / `QDT_FORCE_FETCH_MINIZIP` – ZIP backend selection
+### Optional Build Flags
+- `QDT_FORCE_SYSTEM_LIBZIP` – require system libzip (fail if missing)
+- `QDT_FORCE_FETCH_MINIZIP` – force minizip-ng FetchContent even if libzip present
 
 ### Dependencies
 Qt6 (Core, Gui), pugixml, libzip or minizip-ng (auto fallback). All bundled or resolved automatically when not present system-wide.
-
-> Keep this README focused. See source & headers for more advanced usage.
