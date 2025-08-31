@@ -148,6 +148,11 @@ install(EXPORT QtDocxTemplateTargets
     DESTINATION ${CMAKE_INSTALL_LIBDIR}/cmake/QtDocxTemplate
 )
 
+option(QTDOCTXTEMPLATE_BUILD_BENCH "Build local benchmark helpers (not installed)" OFF)
+if(QTDOCTXTEMPLATE_BUILD_BENCH)
+    add_subdirectory(bench)
+endif()
+
 ## (Examples / tests removed in minimal distribution CMake)
 
 message(STATUS "Configured QtDocxTemplate ${PROJECT_VERSION}")

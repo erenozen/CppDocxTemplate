@@ -20,14 +20,19 @@ Testing/
 compile_commands.json
 generated/
 
-# Development / non-distribution content
+# Development / non-distribution content (keep repo minimal)
 tests/
 examples/
 docs/
 .github/
-scripts/run_templ4docx.sh
-scripts/QtDocxTemplatePerfTest*
-scripts/QtDocxTemplateReportExport*
+scripts/
+local-bench/
+bench/
+build_bench/
+bench_template*.docx
+out*.docx
+tmp_hf/
+*.jar
 
 # Local / temp
 tmp_*/
@@ -35,7 +40,7 @@ tmp_*/
 *.tmp
 *.log
 
-# Local Java performance comparison harness (not part of C++ library)
+# Local Java performance comparison harness (excluded)
 tests/performance-tests/
 
 # Misc

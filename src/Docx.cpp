@@ -95,9 +95,11 @@ void Docx::fillTemplate(const Variables &variables) {
     // Build list of document parts to process: main doc + headers + footers
     QStringList targets;
     targets << "word/document.xml";
-    for(const auto &name : m_package->partNames()) {
-        if(name.startsWith("word/header") && name.endsWith(".xml")) targets << name;
-        else if(name.startsWith("word/footer") && name.endsWith(".xml")) targets << name;
+    for(const auto &rawName : m_package->partNames()) {
+        QString name = rawName;
+        if(name.startsWith('/')) name = name.mid(1); // normalize possible leading slash
+        if((name.startsWith("word/header") || name.contains("/word/header")) && name.endsWith(".xml")) targets << name;
+        else if((name.startsWith("word/footer") || name.contains("/word/footer")) && name.endsWith(".xml")) targets << name;
     }
     targets.removeDuplicates();
     for(const auto &partName : targets) {
@@ -148,9 +150,10 @@ QStringList Docx::validateTableColumnPlaceholders(const Variables &variables) co
     if(required.isEmpty()) return missing;
     // Gather text from all relevant parts
     QStringList partNames; partNames << "word/document.xml";
-    for(const auto &name : m_package->partNames()) {
-        if(name.startsWith("word/header") && name.endsWith(".xml")) partNames << name;
-        else if(name.startsWith("word/footer") && name.endsWith(".xml")) partNames << name;
+    for(const auto &rawName : m_package->partNames()) {
+        QString name = rawName; if(name.startsWith('/')) name = name.mid(1);
+        if((name.startsWith("word/header") || name.contains("/word/header")) && name.endsWith(".xml")) partNames << name;
+        else if((name.startsWith("word/footer") || name.contains("/word/footer")) && name.endsWith(".xml")) partNames << name;
     }
     partNames.removeDuplicates();
     for(const auto &pn : partNames) {
