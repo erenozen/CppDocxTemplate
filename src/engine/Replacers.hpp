@@ -15,7 +15,7 @@ struct Replacers {
     static void replaceImages(pugi::xml_document &doc, opc::Package &pkg,
                               const QString &prefix, const QString &suffix,
                               const ::QtDocxTemplate::Variables &vars);
-    static void replaceBulletLists(pugi::xml_document &doc,
+    static void replaceBulletLists(pugi::xml_document &doc, opc::Package &pkg,
                                    const QString &prefix, const QString &suffix,
                                    const ::QtDocxTemplate::Variables &vars);
     static void replaceTables(pugi::xml_document &doc, opc::Package &pkg,

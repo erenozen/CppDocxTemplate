@@ -96,7 +96,7 @@ void Docx::fillTemplate(const Variables &variables) {
     // Perform replacements (text first, then images, bullet lists, tables)
     engine::Replacers::replaceText(part.doc(), m_pattern.prefix, m_pattern.suffix, variables);
     engine::Replacers::replaceImages(part.doc(), *m_package, m_pattern.prefix, m_pattern.suffix, variables);
-    engine::Replacers::replaceBulletLists(part.doc(), m_pattern.prefix, m_pattern.suffix, variables);
+    engine::Replacers::replaceBulletLists(part.doc(), *m_package, m_pattern.prefix, m_pattern.suffix, variables);
     engine::Replacers::replaceTables(part.doc(), *m_package, m_pattern.prefix, m_pattern.suffix, variables);
     // Save back
     QByteArray out = part.save();
