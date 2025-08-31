@@ -29,7 +29,7 @@ scripts/run_templ4docx.sh
 scripts/QtDocxTemplatePerfTest*
 scripts/QtDocxTemplateReportExport*
 
-# Local scratch / temp
+# Local / temp
 tmp_*/
 *.swp
 *.tmp
