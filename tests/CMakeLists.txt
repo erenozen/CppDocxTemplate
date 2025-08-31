@@ -66,3 +66,8 @@ add_executable(qtdocxtemplate_builder_pattern_test builder_pattern_test.cpp)
 target_include_directories(qtdocxtemplate_builder_pattern_test PRIVATE ${CMAKE_SOURCE_DIR}/src ${CMAKE_BINARY_DIR}/_deps/pugixml-src/src)
 target_link_libraries(qtdocxtemplate_builder_pattern_test QtDocxTemplate::core Qt6::Core)
 add_test(NAME qtdocxtemplate_builder_pattern COMMAND qtdocxtemplate_builder_pattern_test)
+
+add_executable(diagnostics_test diagnostics_test.cpp)
+target_include_directories(diagnostics_test PRIVATE ${CMAKE_SOURCE_DIR}/src ${CMAKE_BINARY_DIR}/_deps/pugixml-src/src)
+target_link_libraries(diagnostics_test QtDocxTemplate::core Qt6::Core Qt6::Gui)
+add_test(NAME qtdocxtemplate_diagnostics COMMAND diagnostics_test)

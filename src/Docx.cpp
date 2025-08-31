@@ -13,6 +13,7 @@ bool Docx::ensureOpened() const {
     m_openAttempted = true;
     auto pkg = std::make_shared<opc::Package>();
     if(!pkg->open(m_templatePath)) {
+    setError(ErrorCode::OpenFailed);
         return false;
     }
     m_package = std::move(pkg);
@@ -31,9 +32,11 @@ QString Docx::readFullTextCache() const {
     if(!ensureOpened()) return {};
     // Load document.xml
     auto dataOpt = m_package->readPart("word/document.xml");
-    if(!dataOpt) return {};
+    if(!dataOpt) { setError(ErrorCode::DocumentPartMissing); return {}; }
     xml::XmlPart part;
-    if(!part.load(*dataOpt)) return {};
+    if(!part.load(*dataOpt)) { setError(ErrorCode::XmlParseFailed); return {}; }
+    // Structural validation: require w:body
+    if(part.selectAll("//w:body").empty()) { setError(ErrorCode::XmlParseFailed); return {}; }
     QStringList paragraphLines;
     auto paragraphs = part.selectAll("//w:p");
     for(const auto &p : paragraphs) {
@@ -88,6 +91,7 @@ QStringList Docx::findVariables() const {
 
 void Docx::fillTemplate(const Variables &variables) {
     if(!ensureOpened()) return;
+    clearError();
     // Build list of document parts to process: main doc + headers + footers
     QStringList targets;
     targets << "word/document.xml";
@@ -100,11 +104,13 @@ void Docx::fillTemplate(const Variables &variables) {
         auto dataOpt = m_package->readPart(partName);
         if(!dataOpt) continue;
         xml::XmlPart part;
-        if(!part.load(*dataOpt)) continue;
+    if(!part.load(*dataOpt)) { setError(ErrorCode::XmlParseFailed); continue; }
+    if(part.selectAll("//w:body").empty()) { setError(ErrorCode::XmlParseFailed); continue; }
         engine::Replacers::replaceText(part.doc(), m_pattern.prefix, m_pattern.suffix, variables);
         engine::Replacers::replaceImages(part.doc(), *m_package, m_pattern.prefix, m_pattern.suffix, variables);
         engine::Replacers::replaceBulletLists(part.doc(), *m_package, m_pattern.prefix, m_pattern.suffix, variables);
-        engine::Replacers::replaceTables(part.doc(), *m_package, m_pattern.prefix, m_pattern.suffix, variables);
+    bool mismatch = engine::Replacers::replaceTables(part.doc(), *m_package, m_pattern.prefix, m_pattern.suffix, variables);
+    if(mismatch && !m_lastError.has_value()) setError(ErrorCode::TableColumnLengthMismatch);
         QByteArray out = part.save();
         m_package->writePart(partName, out);
     }

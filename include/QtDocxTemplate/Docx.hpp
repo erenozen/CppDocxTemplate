@@ -22,6 +22,13 @@ namespace xml { class XmlPart; }
  */
 class QTDOCTXTEMPLATE_EXPORT Docx {
 public:
+    /** Error codes for last operation (non-fatal except OpenFailed / XmlParseFailed). */
+    enum class ErrorCode {
+        OpenFailed,
+        DocumentPartMissing,
+        XmlParseFailed,
+        TableColumnLengthMismatch
+    };
     /** Construct with path to an existing .docx template. No I/O until first operation. */
     explicit Docx(QString templatePath);
     ~Docx();
@@ -39,6 +46,11 @@ public:
     /** Write resulting package to disk (zip). */
     void save(const QString &outputPath) const;
 
+    /** Last error code set during an operation; std::nullopt if none since construction or after successful clear. */
+    std::optional<ErrorCode> lastError() const { return m_lastError; }
+    /** Clear stored error. */
+    void clearError() { m_lastError.reset(); }
+
 private:
     QString m_templatePath;
     VariablePattern m_pattern;
@@ -47,9 +59,11 @@ private:
     mutable bool m_documentLoaded{false};
     bool ensureOpened() const; // lazy open helper
     bool ensureDocumentLoaded() const; // load word/document.xml once
+    void setError(ErrorCode ec) const { m_lastError = ec; }
 
     // Build paragraph-joined text (implementation detail shared by readTextContent & findVariables)
     QString readFullTextCache() const;
+    mutable std::optional<ErrorCode> m_lastError;
 };
 
 } // namespace QtDocxTemplate

@@ -18,7 +18,8 @@ struct Replacers {
     static void replaceBulletLists(pugi::xml_document &doc, opc::Package &pkg,
                                    const QString &prefix, const QString &suffix,
                                    const ::QtDocxTemplate::Variables &vars);
-    static void replaceTables(pugi::xml_document &doc, opc::Package &pkg,
+    // Returns true if any table experienced a column length mismatch (truncated)
+    static bool replaceTables(pugi::xml_document &doc, opc::Package &pkg,
                               const QString &prefix, const QString &suffix,
                               const ::QtDocxTemplate::Variables &vars);
 };

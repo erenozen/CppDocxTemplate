@@ -283,12 +283,12 @@ static QString ensureBulletNumbering(opc::Package &pkg) {
 }
 
 
-void Replacers::replaceTables(pugi::xml_document &doc, Package &pkg, const QString &prefix, const QString &suffix, const ::QtDocxTemplate::Variables &vars) {
+bool Replacers::replaceTables(pugi::xml_document &doc, Package &pkg, const QString &prefix, const QString &suffix, const ::QtDocxTemplate::Variables &vars) {
 	// Collect all TableVariables
 	std::vector<const TableVariable*> tables;
 	tables.reserve(vars.all().size());
 	for(const auto &v : vars.all()) if(v->type()==VariableType::Table) tables.push_back(static_cast<const TableVariable*>(v.get()));
-	if(tables.empty()) return;
+	if(tables.empty()) return false;
 
 	// Build placeholder -> (tableIdx, columnIdx) map
 	struct ColRef { size_t tableIdx; size_t colIdx; };
@@ -299,7 +299,8 @@ void Replacers::replaceTables(pugi::xml_document &doc, Package &pkg, const QStri
 			placeholderMap[tv->placeholderKeys()[ci]] = {ti, ci};
 		}
 	}
-	if(placeholderMap.empty()) return;
+	if(placeholderMap.empty()) return false;
+    bool anyMismatch = false;
 
 	// Iterate tables in document
 	pugi::xpath_query tq("//w:tbl"); auto tblNodes = tq.evaluate_node_set(doc);
@@ -339,7 +340,7 @@ void Replacers::replaceTables(pugi::xml_document &doc, Package &pkg, const QStri
 			}
 			if(!matched) continue; // row doesn't fully represent a declared table variable
 
-			bool lenMismatch=false; size_t rowCount = matched->validatedRowCount(lenMismatch);
+			bool lenMismatch=false; size_t rowCount = matched->validatedRowCount(lenMismatch); if(lenMismatch) anyMismatch = true;
 			if(rowCount==0) { tblNode.remove_child(tr); expanded=true; break; }
 			if(lenMismatch) qWarning("TableVariable: column length mismatch; truncating to minimum length %zu", rowCount);
 
@@ -405,6 +406,7 @@ void Replacers::replaceTables(pugi::xml_document &doc, Package &pkg, const QStri
 			// (Optional – suppressed for brevity)
 		}
 	}
-}
+	    return anyMismatch;
+	}
 
 }} // namespace QtDocxTemplate::engine
