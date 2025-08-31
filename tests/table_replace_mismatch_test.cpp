@@ -1,4 +1,3 @@
-// New semantics test: distinct per-column placeholders (templ4docx parity)
 #include "QtDocxTemplate/Docx.hpp"
 #include "QtDocxTemplate/Variables.hpp"
 #include "QtDocxTemplate/TextVariable.hpp"
@@ -25,24 +24,19 @@ static QString writeMinimalDocx(const QString &path,const std::string &docXml){P
 
 int main(){
     QTemporaryDir tmp; assert(tmp.isValid());
-    QString in = tmp.path()+"/tbl.docx";
-    // Template row with distinct placeholders per column
-    std::string body = "<w:tbl><w:tr>"
-                       "<w:tc><w:p><w:r><w:t>${name}</w:t></w:r></w:p></w:tc>"
-                       "<w:tc><w:p><w:r><w:t>${age}</w:t></w:r></w:p></w:tc>"
-                       "</w:tr></w:tbl>";
+    QString in = tmp.path()+"/tbl_mismatch.docx";
+    std::string body = "<w:tbl><w:tr><w:tc><w:p><w:r><w:t>${colA}</w:t></w:r></w:p></w:tc><w:tc><w:p><w:r><w:t>${colB}</w:t></w:r></w:p></w:tc></w:tr></w:tbl>";
     writeMinimalDocx(in, makeDocXml(body));
 
-    auto tableVar = std::make_shared<TableVariable>();
-    std::vector<VariablePtr> nameCol; nameCol.push_back(std::make_shared<TextVariable>("${name}", "Alice")); nameCol.push_back(std::make_shared<TextVariable>("${name}", "Bob"));
-    std::vector<VariablePtr> ageCol; ageCol.push_back(std::make_shared<TextVariable>("${age}", "30")); ageCol.push_back(std::make_shared<TextVariable>("${age}", "25"));
-    tableVar->addColumn(nameCol); tableVar->addColumn(ageCol);
-    Variables vars; vars.add(tableVar);
+    auto tv = std::make_shared<TableVariable>();
+    std::vector<VariablePtr> colA; colA.push_back(std::make_shared<TextVariable>("${colA}", "A1")); colA.push_back(std::make_shared<TextVariable>("${colA}", "A2")); colA.push_back(std::make_shared<TextVariable>("${colA}", "A3"));
+    std::vector<VariablePtr> colB; colB.push_back(std::make_shared<TextVariable>("${colB}", "B1")); colB.push_back(std::make_shared<TextVariable>("${colB}", "B2")); // shorter column
+    tv->addColumn(colA); tv->addColumn(colB);
+    Variables vars; vars.add(tv);
     Docx d(in); d.fillTemplate(vars); QString out = in+".out.docx"; d.save(out);
     Package pkg; assert(pkg.open(out)); auto xml = pkg.readPart("word/document.xml"); QString doc = *xml;
-    assert(doc.contains("Alice")); assert(doc.contains("Bob"));
-    assert(doc.contains("30")); assert(doc.contains("25"));
-    // Ensure placeholders removed
-    assert(!doc.contains("${name}")); assert(!doc.contains("${age}"));
-    std::cout << "table_replace_test (new semantics) passed" << std::endl; return 0;
+    // Expect only two rows (min length = 2) => A1,A2,B1,B2 present; A3 absent
+    assert(doc.contains("A1")); assert(doc.contains("A2")); assert(!doc.contains("A3"));
+    assert(doc.contains("B1")); assert(doc.contains("B2"));
+    std::cout << "table_replace_mismatch_test passed" << std::endl; return 0;
 }

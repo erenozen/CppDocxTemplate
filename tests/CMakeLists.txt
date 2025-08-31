@@ -36,3 +36,8 @@ add_executable(table_replace_test table_replace_test.cpp)
 target_include_directories(table_replace_test PRIVATE ${CMAKE_SOURCE_DIR}/src ${CMAKE_BINARY_DIR}/_deps/pugixml-src/src)
 target_link_libraries(table_replace_test QtDocxTemplate::core)
 add_test(NAME qtdocxtemplate_table_replace COMMAND table_replace_test)
+
+add_executable(table_replace_mismatch_test table_replace_mismatch_test.cpp)
+target_include_directories(table_replace_mismatch_test PRIVATE ${CMAKE_SOURCE_DIR}/src ${CMAKE_BINARY_DIR}/_deps/pugixml-src/src)
+target_link_libraries(table_replace_mismatch_test QtDocxTemplate::core)
+add_test(NAME qtdocxtemplate_table_replace_mismatch COMMAND table_replace_mismatch_test)
