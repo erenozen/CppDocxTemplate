@@ -20,6 +20,9 @@ Testing/
 compile_commands.json
 generated/
 
+# Local Java performance comparison harness (not part of C++ library)
+tests/performance-tests/
+
 # Misc
 *.user
 *.DS_Store
