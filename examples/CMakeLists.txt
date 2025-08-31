@@ -1,3 +1,4 @@
 add_subdirectory(text_variables)
 add_subdirectory(image_variable)
 add_subdirectory(table_variable)
+add_subdirectory(parity_workflow)

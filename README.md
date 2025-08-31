@@ -42,6 +42,21 @@ doc.save("output.docx");
 
 Utility helpers: `Docx::readTextContent()`, `Docx::findVariables()`.
 
+### templ4docx Parity Aliases
+For easier migration from Java templ4docx naming, the following aliases are provided (identical behavior):
+`Variables::addTextVariable`, `addImageVariable`, `addBulletListVariable`, `addTableVariable` and `TableVariable::addVariable` (adds a column). Existing concise methods remain.
+
+Parity table example (Java-like style):
+```cpp
+Variables vars;
+auto table = std::make_shared<TableVariable>();
+table->addVariable({ std::make_shared<TextVariable>("${plate}", "06ABC123"), std::make_shared<TextVariable>("${plate}", "06XYZ789") });
+table->addVariable({ std::make_shared<TextVariable>("${company}", "Alpha"), std::make_shared<TextVariable>("${company}", "Beta") });
+vars.addTableVariable(table);
+doc.fillTemplate(vars);
+```
+See example target `parity_workflow`.
+
 ## Extended Examples
 
 Custom pattern:

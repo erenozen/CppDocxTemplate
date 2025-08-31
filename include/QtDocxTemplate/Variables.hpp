@@ -16,12 +16,20 @@ public:
     void add(const VariablePtr &v);
     /** Convenience: create and add a TextVariable. Returns added variable. */
     VariablePtr addText(const QString &key, const QString &value);
+    /** Alias for templ4docx style (parity). */
+    VariablePtr addTextVariable(const QString &key, const QString &value) { return addText(key, value); }
     /** Convenience: create and add an ImageVariable. */
     VariablePtr addImage(const QString &key, const QImage &image, int wPx, int hPx);
+    /** Alias for templ4docx style (parity). */
+    VariablePtr addImageVariable(const QString &key, const QImage &image, int wPx, int hPx) { return addImage(key, image, wPx, hPx); }
     /** Convenience: create and add a BulletListVariable with given item texts (each becomes a TextVariable). */
     VariablePtr addBulletList(const QString &key, const QStringList &items);
+    /** Alias for templ4docx style (parity). */
+    VariablePtr addBulletListVariable(const QString &key, const QStringList &items) { return addBulletList(key, items); }
     /** Convenience: add an existing TableVariable (shared_ptr). */
     void addTable(const std::shared_ptr<class TableVariable> &tableVar) { add(std::static_pointer_cast<Variable>(tableVar)); }
+    /** Alias for templ4docx style (parity). */
+    void addTableVariable(const std::shared_ptr<class TableVariable> &tableVar) { addTable(tableVar); }
     /** Access underlying ordered collection. */
     const std::vector<VariablePtr> & all() const { return m_vars; }
 private:

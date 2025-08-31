@@ -32,4 +32,23 @@ std::shared_ptr<TableVariable> makeTableVar(std::initializer_list<TableColumnSpe
     return tv;
 }
 
+std::shared_ptr<TableVariable> makeTableVarFromRows(const QStringList &orderedKeys,
+                                                    const std::vector<QMap<QString, QString>> &rows,
+                                                    const VariablePattern &pat){
+    auto tv = std::make_shared<TableVariable>();
+    if(orderedKeys.isEmpty() || rows.empty()) return tv;
+    // Initialize columns
+    std::vector<std::vector<VariablePtr>> cols; cols.resize(orderedKeys.size());
+    for(const auto &row : rows){
+        for(int i=0;i<orderedKeys.size();++i){
+            QString key = orderedKeys[i];
+            QString wrapped = ensureWrapped(key, pat);
+            QString value = row.value(key, QString());
+            cols[i].push_back(std::make_shared<TextVariable>(wrapped, value));
+        }
+    }
+    for(auto &c : cols) tv->addColumn(c);
+    return tv;
+}
+
 } // namespace QtDocxTemplate

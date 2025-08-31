@@ -12,6 +12,7 @@
 #include "QtDocxTemplate/Docx.hpp"
 #include <memory>
 #include <initializer_list>
+#include <QMap>
 
 namespace QtDocxTemplate {
 
@@ -45,5 +46,14 @@ struct TableColumnSpec { QString keyOrName; QStringList values; };
 /** Create a TableVariable from initializer_list of column specs. Each item list becomes a column; lengths may differ (shortest governs). */
 QTDOCTXTEMPLATE_EXPORT std::shared_ptr<TableVariable> makeTableVar(std::initializer_list<TableColumnSpec> cols, const VariablePattern &pat = {});
 inline std::shared_ptr<TableVariable> makeTableVar(const Docx &d, std::initializer_list<TableColumnSpec> cols){ return makeTableVar(cols, d.variablePattern()); }
+
+/** Build a TableVariable from row maps given an explicit ordered list of keys.
+ *  Each key produces a column; for each row, missing keys yield empty string. */
+QTDOCTXTEMPLATE_EXPORT std::shared_ptr<TableVariable> makeTableVarFromRows(const QStringList &orderedKeys,
+                                                                         const std::vector<QMap<QString, QString>> &rows,
+                                                                         const VariablePattern &pat = {});
+inline std::shared_ptr<TableVariable> makeTableVarFromRows(const Docx &d, const QStringList &keys, const std::vector<QMap<QString, QString>> &rows){
+    return makeTableVarFromRows(keys, rows, d.variablePattern());
+}
 
 } // namespace QtDocxTemplate

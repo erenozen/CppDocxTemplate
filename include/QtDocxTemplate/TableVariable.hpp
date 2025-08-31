@@ -21,6 +21,9 @@ public:
     /** Add a column. All variables within the column must be Text variables and share the same placeholder token. */
     void addColumn(const std::vector<VariablePtr> &column);
 
+    /** Parity alias with templ4docx: addVariable(list) adds a column. */
+    void addVariable(const std::vector<VariablePtr> &column) { addColumn(column); }
+
     /** Access raw column storage. */
     const std::vector<std::vector<VariablePtr>> & columns() const { return m_columns; }
 
