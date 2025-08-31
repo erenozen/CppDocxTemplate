@@ -9,6 +9,7 @@
 #include "QtDocxTemplate/ImageVariable.hpp"
 #include "QtDocxTemplate/BulletListVariable.hpp"
 #include "QtDocxTemplate/TableVariable.hpp"
+#include "QtDocxTemplate/Docx.hpp"
 #include <memory>
 #include <initializer_list>
 
@@ -27,17 +28,22 @@ inline QString ensureWrapped(const QString &rawOrWrapped, const VariablePattern 
 
 /** Create a TextVariable (wrapping key if necessary). */
 QTDOCTXTEMPLATE_EXPORT std::shared_ptr<TextVariable> makeTextVar(const QString &keyOrName, const QString &value, const VariablePattern &pat = {});
+/** Overload: derive pattern from a Docx instance. */
+inline std::shared_ptr<TextVariable> makeTextVar(const Docx &d, const QString &keyOrName, const QString &value){ return makeTextVar(keyOrName, value, d.variablePattern()); }
 
 /** Create an ImageVariable (wrapping key if necessary). */
 QTDOCTXTEMPLATE_EXPORT std::shared_ptr<ImageVariable> makeImageVar(const QString &keyOrName, const QImage &img, int wPx, int hPx, const VariablePattern &pat = {});
+inline std::shared_ptr<ImageVariable> makeImageVar(const Docx &d, const QString &keyOrName, const QImage &img, int wPx, int hPx){ return makeImageVar(keyOrName, img, wPx, hPx, d.variablePattern()); }
 
 /** Create a BulletListVariable from item texts (key wrapped if necessary). */
 QTDOCTXTEMPLATE_EXPORT std::shared_ptr<BulletListVariable> makeBulletListVar(const QString &keyOrName, const QStringList &items, const VariablePattern &pat = {});
+inline std::shared_ptr<BulletListVariable> makeBulletListVar(const Docx &d, const QString &keyOrName, const QStringList &items){ return makeBulletListVar(keyOrName, items, d.variablePattern()); }
 
 /** Convenience structure for table column specification. */
 struct TableColumnSpec { QString keyOrName; QStringList values; };
 
 /** Create a TableVariable from initializer_list of column specs. Each item list becomes a column; lengths may differ (shortest governs). */
 QTDOCTXTEMPLATE_EXPORT std::shared_ptr<TableVariable> makeTableVar(std::initializer_list<TableColumnSpec> cols, const VariablePattern &pat = {});
+inline std::shared_ptr<TableVariable> makeTableVar(const Docx &d, std::initializer_list<TableColumnSpec> cols){ return makeTableVar(cols, d.variablePattern()); }
 
 } // namespace QtDocxTemplate

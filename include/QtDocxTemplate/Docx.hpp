@@ -28,6 +28,8 @@ public:
 
     /** Override variable pattern (default ${ .. }). */
     void setVariablePattern(const VariablePattern &pattern);
+    /** Current variable pattern in effect. */
+    const VariablePattern & variablePattern() const { return m_pattern; }
     /** Return paragraph-joined plain text of the main document (paragraphs separated by \n). */
     QString readTextContent() const; // paragraphs joined by '\n'
     /** Non-greedy scan for placeholders matching prefix+suffix. Spans across run boundaries. Deduplicated, order of first appearance. */
