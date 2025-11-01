@@ -1,4 +1,4 @@
-## CppDocxTemplate – Utility library for filling templates in DOCX files (Qt 6 / C++)
+## CppDocxTemplate – Utility library for filling templates in DOCX files 
 
 Lightweight C++ library for reading DOCX text, finding placeholders, and filling templates with text, images, bullet lists and tables (including headers & footers). Inspired by templ4docx. Repository trimmed to only essential library sources (see layout below).
 
